@@ -4,7 +4,7 @@ function login(){
 	read -p "Username: " username
 	read -s -p "Password: " password
 	echo ''
-	rm cookie 2&>1 > /dev/null
+	rm cookie &>/dev/null
 	token=`curl -c cookie -s -o /dev/null 'https://www.plurk.com/login' \
 		| grep -oh 'login_token" value=".*"\ \/>\ <input\ type="hidden"\ name="logintoken"\ value="1"\ \/>' \
 		| sed -e 's/login_token"\ value="//g' -e 's/"\ \/>\ <input\ type="hidden"\ name="logintoken"\ value="1"\ \/>//g'`
@@ -59,6 +59,12 @@ function subtract_list(){
 	awk 'FNR==NR{ array[$0]; next} {if ( $1 in array ) next; print $1}' $2 $1
 }
 
+function clean_up(){
+	rm tmp_final
+	rm cookie
+}
+
+
 login
 echo "Logging...."
 c=1
@@ -83,4 +89,4 @@ do
 	getuserdata $line
 done < tmp_final
 
-rm cookie
+clean_up
