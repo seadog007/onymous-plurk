@@ -3,6 +3,7 @@
 function login(){
 	read -p "Username: " username
 	read -s -p "Password: " password
+	echo ''
 	rm cookie 2&>1 > /dev/null
 	token=`curl -c cookie -s -o /dev/null 'https://www.plurk.com/login' \
 		| grep -oh 'login_token" value=".*"\ \/>\ <input\ type="hidden"\ name="logintoken"\ value="1"\ \/>' \
