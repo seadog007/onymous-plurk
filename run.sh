@@ -33,10 +33,6 @@ function get_friends_by_offset(){
 	done
 }
 
-function getmyfriends(){
-	curl -b cookie -s 'https://www.plurk.com/Friends/getMyFriendsCompletion' -XPOST | jq keys | jq -r '.[]'
-}
-
 function get_mutual_friends_by_offset(){
 	userid=$1
 	offset=0
@@ -74,8 +70,7 @@ do
 	echo "$c of $total:"
 	rule=${line:0:1}
 	username=${line:1:${#line}-1}
-	[ "$username" == "me" ] && echo "Fetch my friends" && getmyfriends > tmp
-	[ "$username" != "me" ] && echo "Fetch friends list of $username" && get_friends_by_offset `username2id $username` > tmp
+	echo "Fetch friends list of $username" && get_friends_by_offset `username2id $username` > tmp
 	[ $c -eq 1 ] && mv tmp tmp_final
 	[ $c -gt 1 ] && [ "$rule" == "+" ] && echo "$username can see the plurk" && and_list tmp_final tmp > tmp_tmp
 	[ $c -gt 1 ] && [ "$rule" == "-" ] && echo "$username cannot see the plurk" && subtract_list tmp_final tmp > tmp_tmp
