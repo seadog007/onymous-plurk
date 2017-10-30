@@ -32,7 +32,7 @@ function get_friends_by_offset(){
 		stderr "- Fetch $offset of $friendcount"
 		res=`curl -s 'https://www.plurk.com/Friends/getFriendsByOffset' --data "offset=$offset&user_id=$userid"`
 		[ "$res" == '[]' ] && return 0
-		echo $res | sed 's/"date_of_birth":\ new Date(".\{1,30\}"),//g' | jq '.[] | [(.uid | tostring), .nick_name] | join(",")'
+		echo $res | sed 's/"date_of_birth":\ new Date(".\{1,30\}"),//g' | jq '.[] | if (.is_disabled == false) then [(.uid | tostring), .nick_name] | join(",") else empty end'
 		offset=$(($offset + 10))
 	done
 }
