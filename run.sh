@@ -82,7 +82,12 @@ while read line
 do
 	userid=`echo $line | awk -F ',' '{print $1}'`
 	username=`echo $line | awk -F ',' '{print $2}'`
-	getuserdata $userid $username
+	p=0
+	while read provider
+	do
+		[ "${provider:1:${#provider}-1}" == "$username" ] && p=1
+	done < rule
+	[ $p -eq 0 ] && getuserdata $userid $username
 done < tmp_final
 
 clean_up
