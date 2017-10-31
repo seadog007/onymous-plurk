@@ -34,7 +34,7 @@ function get_friends_by_offset(){
 		stderr "- Fetch $offset of $friendcount"
 		res=`curl -s 'https://www.plurk.com/Friends/getFriendsByOffset' --data "offset=$offset&user_id=$userid"`
 		[ "$res" == '[]' ] && return 0
-		echo $res | sed 's/"date_of_birth":\ new Date(".\{1,30\}"),//g' | jq -r '.[] | if (.is_disabled == false) then [(.uid | tostring), .nick_name] | join(",") else empty end'
+		echo $res | sed 's/"date_of_birth":\ new Date(".\{1,30\}"),//g' | jq -r '.[] | if (.is_disabled == false) then [(.uid | tostring), .nick_name, (if (.timeline_privacy==0) then "y"else "n" end)] | join(",") else empty end'
 		offset=$(($offset + 10))
 	done
 }
@@ -56,7 +56,7 @@ function get_following_by_offset(){
 		stderr "- Fetch $offset"
 		res=`curl -s 'https://www.plurk.com/Friends/getFollowingByOffset' --data "offset=$offset&user_id=$userid"`
 		[ "$res" == '[]' ] && return 0
-		echo $res | sed 's/"date_of_birth":\ new Date(".\{1,30\}"),//g' | jq -r '.[] | if (.is_disabled == false) then [(.uid | tostring), .nick_name] | join(",") else empty end'
+		echo $res | sed 's/"date_of_birth":\ new Date(".\{1,30\}"),//g' | jq -r '.[] | if (.is_disabled == false) then [(.uid | tostring), .nick_name, (if (.timeline_privacy==0) then "y"else "n" end)] | join(",") else empty end'
 		offset=$(($offset + 10))
 	done
 }
@@ -78,6 +78,10 @@ function clean_up(){
 	rm -f tmp_final
 }
 
+function reduce_list(){
+	awk -F, '{if($3=="'$1'"){print};next}' tmp_final
+}
+
 clean_up
 c=1
 total=`wc -l rule`
@@ -95,6 +99,14 @@ do
 	[ $c -gt 1 ] && rm tmp_final tmp && mv tmp_tmp tmp_final
 	c=$(($c + 1))
 done < rule
+
+stderr "Is the anonymous plurk replurkable? (Y/n)"
+read rpa
+rpa=`echo "$rpa" | tr '[:upper:]' '[:lower:]'`
+[ "$rpa" != "n" ] && rpa='y'
+reduce_list $rpa > tmp
+mv tmp tmp_final
+
 
 stderr "\nPossible outcome: `wc -l tmp_final | awk '{print $1}'`\nList possible person:\n"
 while read line
