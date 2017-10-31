@@ -25,6 +25,7 @@ function getuserdata(){
 function get_friends_by_offset(){
 	# Print the friend list (user ID) of a specific user ID to stdout.
 	userid=$1
+	stderr "Fetching Friends"
 	stderr "- User id: $userid"
 	friendcount=`get_friends_count $userid`
 	offset=0
@@ -42,6 +43,22 @@ function get_friends_count(){
 	# Get friends count, but doesn't check the username, so be sure check the username existence before use.
 	userid=$1
 	echo `curl -s "https://www.plurk.com/Friends/showFriends?user_id=$userid&page=" | grep -oP "'friends',.+?,\s\K\d+"`
+}
+
+function get_following_by_offset(){
+	# Print the friend list (user ID) of a specific user ID to stdout.
+	userid=$1
+	stderr "Fetching Following"
+	stderr "- User id: $userid"
+	offset=0
+	while true
+	do
+		stderr "- Fetch $offset"
+		res=`curl -s 'https://www.plurk.com/Friends/getFollowingByOffset' --data "offset=$offset&user_id=$userid"`
+		[ "$res" == '[]' ] && return 0
+		echo $res | sed 's/"date_of_birth":\ new Date(".\{1,30\}"),//g' | jq -r '.[] | if (.is_disabled == false) then [(.uid | tostring), .nick_name] | join(",") else empty end'
+		offset=$(($offset + 10))
+	done
 }
 
 function and_list(){
@@ -69,7 +86,9 @@ do
 	stderr "$c of $total:"
 	rule=${line:0:1}
 	username=${line:1:${#line}-1}
-	stderr "Fetch friends list of $username" && get_friends_by_offset `username2id $username` > tmp
+	userid=`username2id $username`
+	stderr "Fetch friends list of $username" && get_friends_by_offset $userid > tmp
+	stderr "Fetch following list of $username" && get_following_by_offset $userid >> tmp
 	[ $c -eq 1 ] && mv tmp tmp_final
 	[ $c -gt 1 ] && [ "$rule" == "+" ] && echo "$username can see the plurk" && and_list tmp_final tmp > tmp_tmp
 	[ $c -gt 1 ] && [ "$rule" == "-" ] && echo "$username cannot see the plurk" && subtract_list tmp_final tmp > tmp_tmp
@@ -77,7 +96,7 @@ do
 	c=$(($c + 1))
 done < rule
 
-stderr "\n\nList possible person:\n"
+stderr "\nPossible outcome: `wc -l tmp_final | awk '{print $1}'`\nList possible person:\n"
 while read line
 do
 	userid=`echo $line | awk -F ',' '{print $1}'`
