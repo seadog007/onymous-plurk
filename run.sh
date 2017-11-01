@@ -90,8 +90,8 @@ do
 	stderr "Fetch friends list of $username" && get_friends_by_offset $userid > tmp
 	stderr "Fetch following list of $username" && get_following_by_offset $userid >> tmp
 	[ $c -eq 1 ] && mv tmp tmp_final
-	[ $c -gt 1 ] && [ "$rule" == "+" ] && echo "$username can see the plurk" && and_list tmp_final tmp > tmp_tmp
-	[ $c -gt 1 ] && [ "$rule" == "-" ] && echo "$username cannot see the plurk" && subtract_list tmp_final tmp > tmp_tmp
+	[ "$rule" == "+" ] && stderr "$username can see the plurk" && and_list tmp_final tmp > tmp_tmp
+	[ "$rule" == "-" ] && stderr "$username cannot see the plurk" && subtract_list tmp_final tmp > tmp_tmp
 	[ $c -gt 1 ] && rm tmp_final tmp && mv tmp_tmp tmp_final
 	c=$(($c + 1))
 done < rule
