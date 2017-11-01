@@ -19,7 +19,7 @@ function username2id(){
 function getuserdata(){
 	echo "-----------$2-----------"
 	curl -s 'https://www.plurk.com/Users/getUserData' --data "page_uid=$1" | jq -r '"Fans: " + (.num_of_fans | tostring) + "\n" + "Friend: " + (.num_of_friends | tostring)'
-	curl -s "https://www.plurk.com/$2" | grep -oP 'var GLOBAL = \K.*' | sed 's/"date_of_birth":new Date(".\{1,30\}"),//g' | jq -r '"Full name: " + .page_user.full_name + "\n" + "Display name: " + .page_user.display_name'
+	curl -s "https://www.plurk.com/$2" | grep -oP 'var GLOBAL = \K.*' | sed 's/"date_of_birth":new Date(".\{1,30\}"),//g' | jq -r '"Full name: " + .page_user.full_name + "\n" + "Display name: " + .page_user.display_name + "\n" + "Default Lang: " + .page_user.default_lang'
 }
 
 function get_friends_by_offset(){
