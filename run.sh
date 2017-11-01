@@ -103,6 +103,12 @@ rpa=`echo "$rpa" | tr '[:upper:]' '[:lower:]'`
 awk -F, '{if($3=="'$rpa'"){print};next}' tmp_final > tmp
 mv tmp tmp_final
 
+# The qualifier can be fetched by self-xss the following code on any user page
+# out = ""
+# for (a in window.LANG_QUAL){
+# 	out += a + "," + window.LANG_QUAL[a].whispers + "\n";
+# }
+# console.log(out);
 stderr "Enable Language Filter? (y/N)"
 read lf
 lf=`echo "$lf" | tr '[:upper:]' '[:lower:]'`
