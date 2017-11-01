@@ -34,7 +34,7 @@ function get_friends_by_offset(){
 		stderr "- Fetch $offset of $friendcount"
 		res=`curl -s 'https://www.plurk.com/Friends/getFriendsByOffset' --data "offset=$offset&user_id=$userid"`
 		[ "$res" == '[]' ] && return 0
-		echo $res | sed 's/"date_of_birth":\ new Date(".\{1,30\}"),//g' | jq -r '.[] | if (.is_disabled == false) then [(.uid | tostring), .nick_name, (if (.timeline_privacy==0) then "y"else "n" end)] | join(",") else empty end'
+		echo $res | sed 's/"date_of_birth":\ new Date(".\{1,30\}"),//g' | jq -r '.[] | if (.is_disabled == false) then [(.uid | tostring), .nick_name, (if (.timeline_privacy==0) then "y"else "n" end), .default_lang] | join(",") else empty end'
 		offset=$(($offset + 10))
 	done
 }
@@ -56,7 +56,7 @@ function get_following_by_offset(){
 		stderr "- Fetch $offset"
 		res=`curl -s 'https://www.plurk.com/Friends/getFollowingByOffset' --data "offset=$offset&user_id=$userid"`
 		[ "$res" == '[]' ] && return 0
-		echo $res | sed 's/"date_of_birth":\ new Date(".\{1,30\}"),//g' | jq -r '.[] | if (.is_disabled == false) then [(.uid | tostring), .nick_name, (if (.timeline_privacy==0) then "y"else "n" end)] | join(",") else empty end'
+		echo $res | sed 's/"date_of_birth":\ new Date(".\{1,30\}"),//g' | jq -r '.[] | if (.is_disabled == false) then [(.uid | tostring), .nick_name, (if (.timeline_privacy==0) then "y"else "n" end), .default_lang] | join(",") else empty end'
 		offset=$(($offset + 10))
 	done
 }
@@ -76,10 +76,6 @@ function subtract_list(){
 function clean_up(){
 	rm -f tmp
 	rm -f tmp_final
-}
-
-function reduce_list(){
-	awk -F, '{if($3=="'$1'"){print};next}' tmp_final
 }
 
 clean_up
@@ -104,9 +100,26 @@ stderr "Is the anonymous plurk replurkable? (Y/n)"
 read rpa
 rpa=`echo "$rpa" | tr '[:upper:]' '[:lower:]'`
 [ "$rpa" != "n" ] && rpa='y'
-reduce_list $rpa > tmp
+awk -F, '{if($3=="'$rpa'"){print};next}' tmp_final > tmp
 mv tmp tmp_final
 
+stderr "Enable Language Filter? (y/N)"
+read lf
+lf=`echo "$lf" | tr '[:upper:]' '[:lower:]'`
+if [ "$lf" == "y" ]
+then
+	c=0
+	mv tmp_final tmp
+	stderr "What is the qualifier?"
+	read qualifier
+	while read lang
+	do
+		c=1
+		awk -F, '{if($4=="'$lang'"){print}}' tmp >> tmp_final
+	done < <(awk -F, '{if($2=="'$qualifier'"){print $1}}' qualifier)
+	[ $c -eq 0 ] && stderr "String not found in the language pack, disabling language filter..." && mv tmp tmp_final
+	[ $c -eq 1 ] && rm tmp
+fi
 
 stderr "\nPossible outcome: `wc -l tmp_final | awk '{print $1}'`\nList possible person:\n"
 while read line
