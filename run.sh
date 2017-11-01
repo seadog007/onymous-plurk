@@ -109,6 +109,8 @@ mv tmp tmp_final
 # 	out += a + "," + window.LANG_QUAL[a].whispers + "\n";
 # }
 # console.log(out);
+stderr "\n[Experiment function]"
+stderr "It might be unaccuracy due to the different language setting on mobile device or changing the default language."
 stderr "Enable Language Filter? (y/N)"
 read lf
 lf=`echo "$lf" | tr '[:upper:]' '[:lower:]'`
