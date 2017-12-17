@@ -20,6 +20,8 @@ function getuserdata(){
 	echo "-----------$2-----------"
 	curl -s 'https://www.plurk.com/Users/getUserData' --data "page_uid=$1" | jq -r '"Fans: " + (.num_of_fans | tostring) + "\n" + "Friend: " + (.num_of_friends | tostring)'
 	curl -s "https://www.plurk.com/$2" | grep -oP 'var GLOBAL = \K.*' | sed 's/"date_of_birth":new Date(".\{1,30\}"),//g' | jq -r '"Full name: " + .page_user.full_name + "\n" + "Display name: " + .page_user.display_name + "\n" + "Default Lang: " + .page_user.default_lang'
+	[ "$tf" == "y" ] && echo "Last Login (UTC): $3"
+	[ "$tf" != "y" ] && echo "Last Login (UTC): "`curl -s "https://www.plurk.com/$username" | grep -oP 'last_visit = new Date\('"'"'\K.*'"(?='\.)"`
 }
 
 function get_friends_by_offset(){
@@ -129,17 +131,53 @@ then
 	[ $c -eq 1 ] && rm tmp
 fi
 
+stderr "\n[Experiment function]"
+stderr "It might be unaccuracy due to non-refersh time of last login."
+stderr "Enable Time Filter? (Y/n)"
+read tf
+tf=`echo "$tf" | tr '[:upper:]' '[:lower:]'`
+[ "$tf" != "n" ] && tf='y'
+if [ "$tf" == "y" ]
+then
+	# I don't want to deal with your wrong format lol
+	# so if you entering wrong fmt is your problem
+	stderr "Using format that your 'date' command can accept"
+	stderr "Recommanded format: yyyy-mm-dd hh:mm"
+	stderr "Enter the time of the plurk (Your timezone):"
+	read t
+	TZ=Asia/Taipei # Your Timezone, change it
+	t=`date -d "TZ=\"$TZ\" $t" +%s`
+	if [ -z "$t" ]
+	then
+		stderr "Wrong format, disabling time filter"
+	else
+		mv tmp_final tmp
+		stderr "Running...\nPlease wait"
+		while read line
+		do
+			username=`echo $line | awk -F ',' '{print $2}'`
+			ot=`curl -s "https://www.plurk.com/$username" | grep -oP 'last_visit = new Date\('"'"'\K.*'"(?='\.)"` # Fetch last login time
+			d=`date -d "TZ=\"UTC-8\" $ot" "+%s"` # UTC-8 mean the orginal time minor 8 hr for the calibration of plurk last login refeash time
+			[ $d -ge $t ] && echo "$line,$ot" >> tmp_final
+		done < tmp
+		rm tmp
+	fi
+fi
+
+
 stderr "\nPossible outcome: `wc -l tmp_final | awk '{print $1}'`\nList possible person:\n"
 while read line
 do
 	userid=`echo $line | awk -F ',' '{print $1}'`
 	username=`echo $line | awk -F ',' '{print $2}'`
+	last_login=`echo $line | awk -F ',' '{print $5}'`
+
 	p=0
 	while read provider
 	do
 		[ "${provider:1:${#provider}-1}" == "$username" ] && p=1
 	done < rule
-	[ $p -eq 0 ] && getuserdata $userid $username
+	[ $p -eq 0 ] && getuserdata $userid $username "$last_login" $tf
 done < tmp_final
 
 clean_up
