@@ -9,6 +9,13 @@ onymous-plurk是一款可以自動比對好友列表來找到偷偷說發文者�
 * awk (GNU)
 * curl
 
+# 過濾策略
+
+* 好友交叉比對
+* 可否轉噗
+* [實驗] 發語詞語系
+* [實驗] 最後上線時間判斷
+
 # 使用說明
 
 1. 根據你所問到朋友的回應來更改 `rule` 的內容
@@ -38,6 +45,13 @@ onymous-plurk is a tool for automatically find the plurker who send an anonymous
   * `sudo apt-get install jq`
 * awk (GNU)
 * curl
+
+# Filtering strategy
+
+* Cross-matching between friends
+* Replurkable
+* [Experiment] Qualifier Language
+* [Experiment] Last Visit Time
 
 # Usage
 
